@@ -1,0 +1,15 @@
+:root {
+    --white: black;
+    --semi-black: #f9f9f9;
+    --bg: #ffffff;
+    --btn: #f7f7f7;
+    --icon: #dad8d8;
+}
+
+[data-theme="dark"] {
+    --white: white;
+    --semi-black: #292d36;
+    --bg: #22252d;
+    --btn: #272b33;
+    --icon: #55585f;
+}

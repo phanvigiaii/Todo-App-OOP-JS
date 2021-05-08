@@ -1,0 +1,6 @@
+/src/*.html
+/src/assets/css/main.css
+.DS_Store
+.idea/*
+/node_modules/
+yarn.lock
