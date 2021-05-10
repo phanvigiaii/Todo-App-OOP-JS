@@ -3,3 +3,17 @@
         <i class="far fa-sun"></i>
     button.dark
         <i class="far fa-moon"></i>
+
+.todo-app
+    .form-group
+            div.d-flex.align-items-center.text-center.w-50.m-auto
+                <i class="fas fa-filter mr-3"></i>
+                select#input.form-control(name='' required='required')
+                    option(value=-1 selected) Default 
+                    option(value=1) 
+                        <i class="fas fa-sort-alpha-down"></i> 
+                        | Ascending
+                    option(value=0) 
+                        <i class="fas fa-sort-alpha-up"></i> Descending
+    input.w-100(type="text" placeholder="Add an item" id="input-todo")
+    ul.todo-list
