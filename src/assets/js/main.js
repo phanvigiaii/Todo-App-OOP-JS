@@ -1,12 +1,15 @@
 class TodoApp {
-    constructor(inputField, todoList) {
+    constructor(inputField, todoList, selection) {
         this.inputField = inputField;
         this.todoList = todoList;
+        this.selection = selection;
         this.addEventInputField();
-        this.render();
+        this.addEventSelection();
+        this.sortBy = 0;
     }
 
     addEventInputField() {
+        const $this = this;
         this.inputField.addEventListener("focus", function () {
             this.setAttribute("data-key", true);
         });
@@ -22,10 +25,21 @@ class TodoApp {
 
             if (key.which === 13 && this.getAttribute("data-key")) {
                 if (!this.value) return;
-                const li = todoApp.addNewTodo(this.value, ID);
-                todoApp.addLocalStorage(this.value, ID);
+                const li = $this.addNewTodo(this.value, ID);
+                $this.addLocalStorage(this.value, ID);
                 this.value = "";
             }
+        });
+    }
+
+    addEventSelection() {
+        const $this = this;
+
+        this.selection.addEventListener("change", function (e) {
+            $this.sortBy = Number.parseInt(
+                this.options[this.selectedIndex].value
+            );
+            $this.render();
         });
     }
 
@@ -33,6 +47,15 @@ class TodoApp {
         if (!localStorage.getItem("list-item")) return;
 
         const listItem = JSON.parse(localStorage.getItem("list-item"));
+
+        if (this.sortBy) {
+            listItem.sort((a, b) => {
+                if (a.value < b.value) return -this.sortBy;
+                if (a.value > b.value) return this.sortBy;
+                return 0;
+            });
+        }
+
         const htmls = listItem.map((item) => {
             this.addNewTodo(item.value, item.ID, item.checked);
         });
@@ -146,4 +169,5 @@ class TodoApp {
 
 const inputField = document.querySelector("#input-todo");
 const todoList = document.querySelector(".todo-list");
-const todoApp = new TodoApp(inputField, todoList);
+const selection = document.querySelector(".form-control");
+const todoApp = new TodoApp(inputField, todoList, selection);
