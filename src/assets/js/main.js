@@ -2,23 +2,58 @@ class TodoApp {
     constructor(inputField, todoList) {
         this.inputField = inputField;
         this.todoList = todoList;
+        this.addEventInputField();
+        this.render();
     }
 
-    addLocalStorage(item) {
+    addEventInputField() {
+        this.inputField.addEventListener("focus", function () {
+            this.setAttribute("data-key", true);
+        });
+
+        this.inputField.addEventListener("blur", function () {
+            this.setAttribute("data-key", false);
+        });
+
+        this.inputField.addEventListener("keydown", function (key) {
+            const ID = (function () {
+                return "_" + Math.random().toString(36).substr(2, 9);
+            })();
+
+            if (key.which === 13 && this.getAttribute("data-key")) {
+                if (!this.value) return;
+                const li = todoApp.addNewTodo(this.value, ID);
+                todoApp.addLocalStorage(this.value, ID);
+                this.value = "";
+            }
+        });
+    }
+
+    render() {
+        if (!localStorage.getItem("list-item")) return;
+
+        const listItem = JSON.parse(localStorage.getItem("list-item"));
+        const htmls = listItem.map((item) => {
+            this.addNewTodo(item.value, item.ID, item.checked);
+        });
+    }
+
+    addLocalStorage(item, ID) {
         if (!localStorage.getItem("list-item")) {
             const listItem = [];
-            listItem.push(item);
+
+            listItem.push({ value: item, ID });
             localStorage.setItem("list-item", JSON.stringify(listItem));
         } else {
             const listItem = JSON.parse(localStorage.getItem("list-item"));
-            listItem.push(item);
+
+            listItem.push({ value: item, ID });
             localStorage.setItem("list-item", JSON.stringify(listItem));
         }
     }
 
-    addNewTodo(value) {
+    addNewTodo(value, ID, isChecked) {
         const li = document.createElement("li");
-        li.innerText = value;
         const tag1 = this.createTaga(
             "item-done",
             '<i class="fas fa-check"></i>'
@@ -28,16 +63,26 @@ class TodoApp {
             '<i class="fas fa-trash"></i>'
         );
         const div = this.createDiv(tag1, tag2);
+
+        if (isChecked) {
+            li.className = "checked";
+        }
+
+        li.id = ID;
+        li.innerText = value;
         li.appendChild(div);
         this.todoList.appendChild(li);
-        this.addLocalStorage(li.innerHTML);
+
+        return li;
     }
 
     createDiv(...a) {
         const div = document.createElement("div");
+
         a.forEach((item) => {
             div.appendChild(item);
         });
+
         return div;
     }
 
@@ -53,51 +98,52 @@ class TodoApp {
     }
 
     checkDoneTodoItem(parent) {
+        const listItem = JSON.parse(localStorage.getItem("list-item"));
+        const index = listItem.findIndex((item) => item.ID === parent.id);
+
+        listItem[index].checked = true;
+        localStorage.setItem("list-item", JSON.stringify(listItem));
         parent.className = "checked";
-        parent.style.textDecoration = "line-through";
     }
 
     removeTodoItem(parent) {
+        const listItem = JSON.parse(localStorage.getItem("list-item"));
+        const index = listItem.findIndex((item) => item.ID === parent.id);
+
+        listItem.splice(index, 1);
+        localStorage.setItem("list-item", JSON.stringify(listItem));
         parent.remove();
+    }
+
+    addEventCheckDone(tag) {
+        tag.addEventListener("click", () => {
+            const outerParent = this.findOuterParent(tag);
+            this.checkDoneTodoItem(outerParent);
+        });
+    }
+
+    addEventRemove(tag) {
+        tag.addEventListener("click", () => {
+            const outerParent = this.findOuterParent(tag);
+            this.removeTodoItem(outerParent);
+        });
     }
 
     createTaga(className, child) {
         const a = document.createElement("a");
         a.className = className;
         a.innerHTML = child;
+
         if (className === "item-done") {
-            a.addEventListener("click", () => {
-                const outerParent = this.findOuterParent(a);
-                this.checkDoneTodoItem(outerParent);
-            });
+            this.addEventCheckDone(a);
         } else {
-            a.addEventListener("click", () => {
-                const outerParent = this.findOuterParent(a);
-                this.removeTodoItem(outerParent);
-            });
+            this.addEventRemove(a);
         }
+
         return a;
     }
 }
 
 const inputField = document.querySelector("#input-todo");
 const todoList = document.querySelector(".todo-list");
-
 const todoApp = new TodoApp(inputField, todoList);
-
-inputField.addEventListener("focus", function () {
-    this.setAttribute("data-key", true);
-});
-
-inputField.addEventListener("blur", function () {
-    this.setAttribute("data-key", false);
-});
-
-inputField.addEventListener("keydown", function (key) {
-    if (key.which === 13 && this.getAttribute("data-key")) {
-        todoApp.addNewTodo(this.value);
-        this.value = "";
-    }
-});
-
-console.log(localStorage.getItem("item"));

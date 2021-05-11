@@ -1,3 +1,11 @@
+* {
+    transition: all 0.3s ease-in-out;
+}
+
+body {
+    background-color: var(--semi-black);
+}
+
 .todo-app {
     margin: auto;
     width: 450px;
@@ -11,12 +19,14 @@
         min-height: 100px;
         border: 1px solid rgba(0, 0, 0, 0.1);
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        background-color: #fff;
         li {
             padding: 15px 30px;
             text-align: left;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            text-transform: capitalize;
             i {
                 color: #333;
             }
@@ -25,6 +35,10 @@
             }
             &.checked {
                 color: rgb(155, 155, 155);
+                text-decoration: line-through;
+            }
+            a {
+                cursor: pointer;
             }
         }
     }
