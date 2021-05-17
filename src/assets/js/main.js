@@ -3,9 +3,11 @@ class TodoApp {
         this.inputField = inputField;
         this.todoList = todoList;
         this.selection = selection;
+        this.sortBy = 0;
+        this.data = JSON.parse(localStorage.getItem("list-item")) || [];
         this.addEventInputField();
         this.addEventSelection();
-        this.sortBy = 0;
+        this.render();
     }
 
     addEventInputField() {
@@ -26,8 +28,10 @@ class TodoApp {
             if (key.which === 13 && this.getAttribute("data-key")) {
                 if (!this.value) return;
                 const li = $this.addNewTodo(this.value, ID);
-                $this.addLocalStorage(this.value, ID);
+                $this.data.push({ value: this.value, ID });
+                $this.set();
                 this.value = "";
+                $this.render();
             }
         });
     }
@@ -44,126 +48,55 @@ class TodoApp {
     }
 
     render() {
-        if (!localStorage.getItem("list-item")) return;
-
-        const listItem = JSON.parse(localStorage.getItem("list-item"));
-
         if (this.sortBy) {
-            listItem.sort((a, b) => {
+            this.data.sort((a, b) => {
                 if (a.value < b.value) return -this.sortBy;
                 if (a.value > b.value) return this.sortBy;
                 return 0;
             });
         }
 
-        const htmls = listItem.map((item) => {
-            this.addNewTodo(item.value, item.ID, item.checked);
+        const htmls = this.data.map((item) => {
+            return this.addNewTodo(item.value, item.ID, item.isChecked);
         });
+
+        this.todoList.innerHTML = htmls.join("");
     }
 
-    addLocalStorage(item, ID) {
-        if (!localStorage.getItem("list-item")) {
-            const listItem = [];
-
-            listItem.push({ value: item, ID });
-            localStorage.setItem("list-item", JSON.stringify(listItem));
-        } else {
-            const listItem = JSON.parse(localStorage.getItem("list-item"));
-
-            listItem.push({ value: item, ID });
-            localStorage.setItem("list-item", JSON.stringify(listItem));
-        }
+    set() {
+        localStorage.setItem("list-item", JSON.stringify(this.data));
     }
 
     addNewTodo(value, ID, isChecked) {
-        const li = document.createElement("li");
-        const tag1 = this.createTaga(
-            "item-done",
-            '<i class="fas fa-check"></i>'
-        );
-        const tag2 = this.createTaga(
-            "item-delete",
-            '<i class="fas fa-trash"></i>'
-        );
-        const div = this.createDiv(tag1, tag2);
+        return `<li class=${(isChecked && "checked") || ""} id=${ID}>
+                    ${value}                
+                    <div>
+                        <a class='item-done' onclick="dispatch('CHECK', '${ID}')">
+                            <i class="fas fa-check"></i>
+                        </a>
+                        <a class='item-delete' onclick="dispatch('DELETE', '${ID}')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                </li>`;
+    }
 
-        if (isChecked) {
-            li.className = "checked";
+    dispatch(action, arg) {
+        switch (action) {
+            case "DELETE":
+                const index = this.data.findIndex((x) => x.ID === arg);
+                this.data.splice(index, 1);
+                break;
+            case "CHECK":
+                this.data.forEach((x) => {
+                    if (x.ID === arg) {
+                        x.isChecked = true;
+                    }
+                });
+                break;
         }
-
-        li.id = ID;
-        li.innerText = value;
-        li.appendChild(div);
-        this.todoList.appendChild(li);
-
-        return li;
-    }
-
-    createDiv(...a) {
-        const div = document.createElement("div");
-
-        a.forEach((item) => {
-            div.appendChild(item);
-        });
-
-        return div;
-    }
-
-    findOuterParent(child) {
-        if (!child) return;
-
-        while (true) {
-            if (child != null && child.tagName === "LI") break;
-            child = child.parentElement;
-        }
-
-        return child;
-    }
-
-    checkDoneTodoItem(parent) {
-        const listItem = JSON.parse(localStorage.getItem("list-item"));
-        const index = listItem.findIndex((item) => item.ID === parent.id);
-
-        listItem[index].checked = true;
-        localStorage.setItem("list-item", JSON.stringify(listItem));
-        parent.className = "checked";
-    }
-
-    removeTodoItem(parent) {
-        const listItem = JSON.parse(localStorage.getItem("list-item"));
-        const index = listItem.findIndex((item) => item.ID === parent.id);
-
-        listItem.splice(index, 1);
-        localStorage.setItem("list-item", JSON.stringify(listItem));
-        parent.remove();
-    }
-
-    addEventCheckDone(tag) {
-        tag.addEventListener("click", () => {
-            const outerParent = this.findOuterParent(tag);
-            this.checkDoneTodoItem(outerParent);
-        });
-    }
-
-    addEventRemove(tag) {
-        tag.addEventListener("click", () => {
-            const outerParent = this.findOuterParent(tag);
-            this.removeTodoItem(outerParent);
-        });
-    }
-
-    createTaga(className, child) {
-        const a = document.createElement("a");
-        a.className = className;
-        a.innerHTML = child;
-
-        if (className === "item-done") {
-            this.addEventCheckDone(a);
-        } else {
-            this.addEventRemove(a);
-        }
-
-        return a;
+        this.render();
+        this.set();
     }
 }
 
@@ -171,3 +104,4 @@ const inputField = document.querySelector("#input-todo");
 const todoList = document.querySelector(".todo-list");
 const selection = document.querySelector(".form-control");
 const todoApp = new TodoApp(inputField, todoList, selection);
+window.dispatch = todoApp.dispatch.bind(todoApp);
